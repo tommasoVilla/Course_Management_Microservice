@@ -9,7 +9,7 @@ class SqsHandlerException(Exception):
     pass
 
 
-def publish_on_queue(message, queue):
+def push_on_queue(message, queue):
     try:
         sqs = boto3.resource('sqs')
         queue = sqs.get_queue_by_name(QueueName=queue)

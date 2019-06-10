@@ -9,7 +9,7 @@ from courses_repository import add_course, CoursesRepositoryException, find_cour
 from exam_repository import find_exam_by_course_id, ExamsRepositoryException, add_exam, find_exam_by_id, \
     add_student_to_exam
 from request_parsing import trim, is_valid_year, is_valid_schedule, is_valid_time, is_valid_date
-from sqshandler import publish_on_queue, SqsHandlerException
+from sqshandler import push_on_queue, SqsHandlerException
 from students_repository import add_student, StudentsRepositoryException, find_student_by_username, \
     add_course_to_student, unsubscribe_from_course
 
@@ -18,9 +18,9 @@ app = Flask(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 # Instantiate MongoClient for the interaction with the Mongo data-store
-# client = pymongo.MongoClient(
-#     "mongodb+srv://federico:<password>@gettingstarted-h4s0t.mongodb.net/test?retryWrites=true&w=majority")
-client = pymongo.MongoClient()
+client = pymongo.MongoClient(
+    "mongodb+srv://federico:loveyou3000@gettingstarted-h4s0t.mongodb.net/test?retryWrites=true&w=majority")
+# client = pymongo.MongoClient()
 
 
 @app.route('/')
@@ -241,9 +241,8 @@ def delete_student_from_course(student_username, course_id):
         abort(500)
 
 
-# todo possibile test
 @app.route('/course_management/api/v1.0/courses/<string:course_id>/notification', methods=['POST'])
-def publish_course_notification(course_id):
+def push_course_notification(course_id):
     """
         This function exports the endpoint used to publish a notification about a course
         :param course_id: identifier of the course to which the notification is associated
@@ -259,12 +258,12 @@ def publish_course_notification(course_id):
     # the notification is published on a message queue that will be consumed asynchronously by
     # notification management microservice
 
-    notificationMessage = {'name': course['name'],
-                           'department': course['department'],
-                           'year': course['year'],
-                           'message': request.json['message']}
+    notification_message = {'name': course['name'],
+                            'department': course['department'],
+                            'year': course['year'],
+                            'message': request.json['message']}
     try:
-        publish_on_queue(json.dumps(notificationMessage), 'NotificationQueue.fifo')
+        push_on_queue(json.dumps(notification_message), 'NotificationQueue.fifo')
         return '', 200  # Ok
     except SqsHandlerException:
         abort(500)  # Internal Server Error
