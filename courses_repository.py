@@ -55,9 +55,11 @@ def find_course(db_client, by, string):
         else:
             strings = string.split("-")
             if len(strings) > 1:
-                find_result = list(courses.find({'teacher': {'$regex': strings[0] + " " + strings[1], '$options': 'i'}}))
+                find_result = list(
+                    courses.find({'teacher': {'$regex': strings[0] + " " + strings[1], '$options': 'i'}}))
             else:
-                find_result = list(courses.find({'teacher': {'$regex': string, '$options': 'i'}}))  # $options: i is for case-insensitive research
+                find_result = list(courses.find(
+                    {'teacher': {'$regex': string, '$options': 'i'}}))  # $options: i is for case-insensitive research
 
         if len(find_result) == 0:
             return None
@@ -128,6 +130,26 @@ def add_course(db_client, course_dict):
         course_dict.pop('_id')
         course_dict['id'] = str(insert_result.inserted_id)  # For JSON serialization
         return course_dict
+
+    except PyMongoError:
+        raise CoursesRepositoryException()
+
+
+def remove_course(db_client, course_dict):
+    """
+        Remove the given course from the data store using the given db_client
+        NOTE: This function remove only the course document ignoring the exams and the students related to the course
+        itself. TODO future release?
+        :param db_client: instance of MongoClient used to make requests to the data store
+        :param course_dict: dictionary representing the course to be removed
+    """
+    try:
+
+        # Access to course_management db
+        db = db_client.course_management
+        # Access to courses collection
+        courses = db.courses
+        courses.delete_one({'_id': ObjectId(course_dict['id'])})
 
     except PyMongoError:
         raise CoursesRepositoryException()

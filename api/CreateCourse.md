@@ -1,7 +1,6 @@
 **Create Course**
 ----
-  Adds a course with the information provided in the JSON body of the request.
-
+    Create a course with the provided information
 * **URL**
 
   /courses/

@@ -5,7 +5,7 @@ import logging
 import os
 import pymongo
 from courses_repository import add_course, CoursesRepositoryException, find_course, find_course_by_id, \
-    find_courses_by_ids
+    find_courses_by_ids, remove_course
 from exam_repository import find_exam_by_course_id, ExamsRepositoryException, add_exam, find_exam_by_id, \
     add_student_to_exam
 from request_parsing import trim, is_valid_year, is_valid_schedule, is_valid_time, is_valid_date
@@ -18,9 +18,11 @@ app = Flask(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 # Instantiate MongoClient for the interaction with the Mongo data-store
-client = pymongo.MongoClient(
-    "mongodb+srv://federico:loveyou3000@gettingstarted-h4s0t.mongodb.net/test?retryWrites=true&w=majority")
-# client = pymongo.MongoClient()
+# client = pymongo.MongoClient(
+#     "mongodb+srv://federico:loveyou3000@gettingstarted-h4s0t.mongodb.net/test?retryWrites=true&w=majority")
+
+
+client = pymongo.MongoClient()
 
 
 @app.route('/')
@@ -149,6 +151,22 @@ def create_course():
         return jsonify(added_course), 201  # Created
     except CoursesRepositoryException:
         abort(500)  # Internal Server Error
+
+
+@app.route('/course_management/api/v1.0/courses/<string:course_id>', methods=['DELETE'])
+def delete_course(course_id):
+    """
+        This function exports the endpoint used to send a course deletion request.
+    """
+    try:
+        course = find_course_by_id(client, course_id)
+        if course is None:
+            logger.error("Course Not Found")
+            abort(make_response(jsonify({'error': "Course Not Found"}), 404))
+        remove_course(client, course)
+        return '', 200
+    except CoursesRepositoryException:
+        abort(500)
 
 
 @app.route('/course_management/api/v1.0/students', methods=['POST'])

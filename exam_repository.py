@@ -118,6 +118,7 @@ def is_valid_reservation(db_client, exam_dict, student_dict):
     except PyMongoError:
         raise ExamsRepositoryException()
 
+
 def add_student_to_exam(db_client, exam_dict, student_dict):
     """
     Reserve the exam for the given student
