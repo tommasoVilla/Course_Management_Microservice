@@ -1,3 +1,5 @@
+import json
+
 from flask import Flask, request, abort, make_response, jsonify
 import logging
 import os
@@ -7,6 +9,7 @@ from courses_repository import add_course, CoursesRepositoryException, find_cour
 from exam_repository import find_exam_by_course_id, ExamsRepositoryException, add_exam, find_exam_by_id, \
     add_student_to_exam
 from request_parsing import trim, is_valid_year, is_valid_schedule, is_valid_time, is_valid_date
+from sqshandler import publish_on_queue, SqsHandlerException
 from students_repository import add_student, StudentsRepositoryException, find_student_by_username, \
     add_course_to_student, unsubscribe_from_course
 
@@ -15,6 +18,8 @@ app = Flask(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 # Instantiate MongoClient for the interaction with the Mongo data-store
+# client = pymongo.MongoClient(
+#     "mongodb+srv://federico:<password>@gettingstarted-h4s0t.mongodb.net/test?retryWrites=true&w=majority")
 client = pymongo.MongoClient()
 
 
@@ -212,7 +217,8 @@ def get_student_courses(student_username):
         abort(500)
 
 
-@app.route('/course_management/api/v1.0/students/<string:student_username>/courses/<string:course_id>', methods=['DELETE'])
+@app.route('/course_management/api/v1.0/students/<string:student_username>/courses/<string:course_id>',
+           methods=['DELETE'])
 def delete_student_from_course(student_username, course_id):
     """
     This function exports the endpoint used to delete the student's subscription to a course.
@@ -233,6 +239,35 @@ def delete_student_from_course(student_username, course_id):
 
     except StudentsRepositoryException or CoursesRepositoryException:
         abort(500)
+
+
+# todo possibile test
+@app.route('/course_management/api/v1.0/courses/<string:course_id>/notification', methods=['POST'])
+def publish_course_notification(course_id):
+    """
+        This function exports the endpoint used to publish a notification about a course
+        :param course_id: identifier of the course to which the notification is associated
+        """
+    if not request.json:
+        abort(400)  # Bad Request
+    if 'message' not in request.json:
+        abort(400)  # Bad Request
+    course = find_course_by_id(client, course_id)
+    if course is None:
+        logger.error("Course Not Found")
+        abort(make_response(jsonify({'error': 'Course Not Found'}), 404))
+    # the notification is published on a message queue that will be consumed asynchronously by
+    # notification management microservice
+
+    notificationMessage = {'name': course['name'],
+                           'department': course['department'],
+                           'year': course['year'],
+                           'message': request.json['message']}
+    try:
+        publish_on_queue(json.dumps(notificationMessage), 'NotificationQueue.fifo')
+        return '', 200  # Ok
+    except SqsHandlerException:
+        abort(500)  # Internal Server Error
 
 
 def check_exam_creation_body(body_request):
