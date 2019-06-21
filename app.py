@@ -18,11 +18,10 @@ app = Flask(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 # Instantiate MongoClient for the interaction with the Mongo data-store
-# client = pymongo.MongoClient(
-#     "mongodb+srv://federico:loveyou3000@gettingstarted-h4s0t.mongodb.net/test?retryWrites=true&w=majority")
+client = pymongo.MongoClient(os.getenv('MONGO_URL', ''))
 
 
-client = pymongo.MongoClient()
+# client = pymongo.MongoClient()
 
 
 @app.route('/')
