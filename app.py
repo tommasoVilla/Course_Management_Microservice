@@ -280,7 +280,7 @@ def push_course_notification(course_id):
                             'year': course['year'],
                             'message': request.json['message']}
     try:
-        push_on_queue(json.dumps(notification_message), 'NotificationQueue.fifo')
+        push_on_queue(json.dumps(notification_message), os.getenv('QUEUE_NAME', 'NotificationQueue.fifo'))
         return '', 200  # Ok
     except SqsHandlerException:
         abort(500)  # Internal Server Error
