@@ -10,7 +10,7 @@ Gli studenti possono:
 - Prenotarsi ad un esame
 - Cercare un corso
 
-Il microservizio espone un'interfaccia REST, i cui endpoint sono documentati in [api](api/).
+Il microservizio espone un'interfaccia REST, i cui endpoint sono documentati su [SwaggerHub](https://app.swaggerhub.com/apis-docs/redefik/CourseManagement/1.0#/) e nella cartella [api](api/).
 
 ## Linguaggio
 Python
